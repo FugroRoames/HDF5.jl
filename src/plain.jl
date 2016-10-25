@@ -2300,6 +2300,29 @@ function hiding_errors(f)
     res
 end
 
+"""
+    get_datasets(file::HDF5File) -> datasets::Vector{HDF5Dataset}
+
+get all datasets in the file without loading the data
+"""
+function get_datasets(file::HDF5File)
+    list = Vector{HDF5Dataset}()
+    get_datasets!(list, file)
+    return list
+end
+
+
+function get_datasets!(list::Vector{HDF5Dataset}, node::Union{HDF5File, HDF5Group, HDF5Dataset})
+    if typeof(node) == HDF5Dataset
+        push!(list, node)
+    else
+        for c in names(node)
+            get_datasets!(list, node[c])
+        end
+    end
+end
+
+
 export
     # Types
     HDF5Attribute,
@@ -2336,6 +2359,7 @@ export
     g_open,
     get_chunk,
     get_create_properties,
+    get_datasets,
     getindex,
     h5open,
     h5read,
