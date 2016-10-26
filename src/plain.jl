@@ -652,27 +652,31 @@ end
     dat
 end
 
-function h5writeattr(filename, name::String, data::Dict)
-    fid = h5open(filename, true, true, true, false, true)
-    try
-        for x in keys(data)
-            attrs(fid[name])[x] = data[x]
-        end
-    finally
-        close(fid)
+function h5writeattr(filename::String, name::String, data::Dict)
+    h5open(filename, "r+") do fid
+        h5writeattr(fid, name, data)
     end
 end
 
-function h5readattr(filename, name::String)
-    local dat
-    fid=h5open(filename,"r")
-    try
-        a=attrs(fid[name])
-        dat = @compat Dict([(x,read(a[x])) for x in names(a)]) # TODO: switch to generator syntax when 0.4 is no longer supported
-    finally
-        close(fid)
+h5writeattr(fid::Union{HDF5File, HDF5Group}, name::String, data::Dict) = h5writeattr(fid[name], data::Dict)
+
+function h5writeattr(fid::Union{HDF5Group, HDF5Dataset}, data::Dict)
+    for x in keys(data)
+        attrs(fid)[x] = data[x]
     end
-    dat
+end
+
+function h5readattr(filename::String, name::String)
+    h5open(filename, "r") do fid
+        h5readattr(fid, name)
+    end
+end
+
+h5readattr(fid::HDF5File, name::String) = h5readattr(fid[name])
+
+function h5readattr(fid::Union{HDF5Group, HDF5Dataset})
+    a = attrs(fid)
+    Dict((x,read(a[x])) for x in names(a))
 end
 
 # Ensure that objects haven't been closed
