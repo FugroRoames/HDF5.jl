@@ -315,12 +315,23 @@ h5open(fn, "r", "libver_bounds",
     @test intarray == [1,2,3]
 end
 
+
 fd = h5open(joinpath(test_path, "datasets.h5"), "w")
 fd["level_0"] = [1,2,3]
+h5writeattr(fd["level_0"], Dict("dataset_att"=>"dataset_att_0"))
 grp = g_create(fd, "mygroup")
+h5writeattr(grp, Dict("group_att"=>"dataset_att_1"))
 fd["mygroup/level_1"] = [4, 5]
+h5writeattr(fd, "mygroup/level_1", Dict("another_dataset_att"=>"dataset_att_2"))
 grp2 = g_create(grp, "deep_group")
 fd["mygroup/deep_group/level_2"] = [6.0, 7.0]
 datasets = get_datasets(fd)
 @assert sort(map(name, datasets)) ==  ["/level_0", "/mygroup/deep_group/level_2", "/mygroup/level_1"]
 close(fd)
+
+h5writeattr(joinpath(test_path, "datasets.h5"), "/mygroup/deep_group/level_2", Dict("Deep"=>2))
+@assert h5readattr(joinpath(test_path, "datasets.h5"), "/mygroup/deep_group/level_2") == Dict("Deep"=>2)
+h5open(joinpath(test_path, "datasets.h5"), "r") do fd
+    @assert h5readattr(fd, "mygroup") == Dict("group_att"=>"dataset_att_1")
+    @assert h5readattr(fd["mygroup/level_1"]) == Dict("another_dataset_att"=>"dataset_att_2")
+end
