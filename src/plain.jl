@@ -1113,7 +1113,11 @@ datatype{T<:HDF5BitsKind}(A::Array{T}) = HDF5Datatype(hdf5_type_id(T), false)
 function datatype{S<:String}(str::S)
     type_id = h5t_copy(hdf5_type_id(S))
     h5t_set_size(type_id, max(length(str.data), 1))
-    h5t_set_cset(type_id, cset(S))
+    if isascii(str)
+        h5t_set_cset(type_id, H5T_CSET_ASCII)
+    else
+        h5t_set_cset(type_id, H5T_CSET_UTF8)
+    end
     HDF5Datatype(type_id)
 end
 function datatype{S<:String}(str::Array{S})
